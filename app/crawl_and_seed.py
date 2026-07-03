@@ -7,7 +7,7 @@ from firecrawl.v2.types import ScrapeOptions
 load_dotenv()
 
 firecrawl_app = Firecrawl(api_key=os.getenv("FIRECRAWL_API_KEY"))
-INGEST_URL = "http://localhost:8000/api/ingest"
+INGEST_URL = "https://ai-compliance-tg-bot-rag-service.onrender.com/api/ingest"
 
 
 def split_into_parent_chunks(text: str, chunk_size: int = 1500, overlap: int = 200) -> list[str]:
@@ -71,7 +71,7 @@ def process_scraped_page(url: str, title: str, markdown_content: str, category: 
 
         time.sleep(2)
             
-    print(f"   💾 Ingested {success_count}/{len(parent_blocks)} blocks into database.\n")
+    print(f" Ingested {success_count}/{len(parent_blocks)} blocks into database.\n")
 
 def run_knowledge_crawl():
     targets = [
@@ -105,11 +105,9 @@ def run_knowledge_crawl():
     ]
 
     for target in targets:
-        print(f"🕸️ Spawning Firecrawl automation for: {target['url']}...")
+        print(f" Spawning Firecrawl automation for: {target['url']}...")
         
         try:
-            # Executes a synchronous crawl pattern. 
-            # Firecrawl polls the background job status automatically and returns when ready.
             crawl_result = firecrawl_app.crawl(
                 url=target["url"],
                 limit=target["limit"],
@@ -117,9 +115,8 @@ def run_knowledge_crawl():
                 scrape_options=ScrapeOptions(formats=["markdown"])
             )
             
-            print(f"✅ Discovered & processed {len(crawl_result.data)} pages.")
+            print(f" Discovered & processed {len(crawl_result.data)} pages.")
             
-            # Pipe results down into your DB ingestion flow
             for page in crawl_result.data:
                 url = page.metadata.source_url if page.metadata else target["url"]
                 title = page.metadata.title if page.metadata else "Untitled Section"
@@ -128,8 +125,8 @@ def run_knowledge_crawl():
                 process_scraped_page(url, title, markdown, target["category"])
                 
         except Exception as e:
-            print(f"❌ Firecrawl crawl routine failed: {e}")
+            print(f" Firecrawl crawl routine failed: {e}")
 
 if __name__ == "__main__":
-    print("🚀 Booting Crawl & DB Generation Routine...\n")
+    print(" Booting Crawl & DB Generation Routine...\n")
     run_knowledge_crawl()
