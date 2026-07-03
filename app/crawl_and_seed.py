@@ -9,6 +9,7 @@ load_dotenv()
 firecrawl_app = Firecrawl(api_key=os.getenv("FIRECRAWL_API_KEY"))
 INGEST_URL = "http://localhost:8000/api/ingest"
 
+
 def split_into_parent_chunks(text: str, chunk_size: int = 1500, overlap: int = 200) -> list[str]:
     chunks = []
     start = 0
@@ -32,7 +33,7 @@ def process_scraped_page(url: str, title: str, markdown_content: str, category: 
     if not markdown_content or len(markdown_content.strip()) < 50:
         return
 
-    print(f"📄 Slicing Page: {title or url} ({category})")
+    print(f" Slicing Page: {title or url} ({category})")
     parent_blocks = split_into_parent_chunks(markdown_content)
     
     success_count = 0
@@ -59,16 +60,15 @@ def process_scraped_page(url: str, title: str, markdown_content: str, category: 
                     success_count += 1
                     break
                 elif res.status_code == 500 and "429" in res.text:
-                    print(f"   ⚠️ Rate limited. Waiting 10 seconds before retry {attempt + 1}/{max_retries}...")
-                    time.sleep(10)
+                    print(f" Rate limited. Waiting 65 seconds before retry {attempt + 1}/{max_retries}...")
+                    time.sleep(65)
                 else:
-                    print(f"   ❌ DB pipeline returned status {res.status_code}: {res.text}")
+                    print(f" DB pipeline returned status {res.status_code}: {res.text}")
                     break
             except Exception as e:
-                print(f"   ❌ DB pipeline connection error: {e}")
+                print(f" DB pipeline connection error: {e}")
                 break
-        
-        # Base delay to prevent hitting the 15 RPM limit on the free tier
+
         time.sleep(2)
             
     print(f"   💾 Ingested {success_count}/{len(parent_blocks)} blocks into database.\n")
@@ -78,15 +78,30 @@ def run_knowledge_crawl():
         {
             "url": "https://doc.youverify.co",
             "category": "developer_api",
-            "limit": 40, # Limit page counts so you don't burn all your free tokens on one crawl
-            "paths": ["/get-started*", "/guides-and-solutions*", "/api-reference/api-reference*", "/api-reference/api-reference/activity-management*", "/our-legacy-api-and-sdk"]
+            "limit": 150, # Raised limit so Firecrawl can naturally capture the full index tree
+            "paths": [
+                "/get-started*",
+                "/platform-model*",
+                "/guides-and-solutions*",
+                "/know-your-customer-services-kyc*",
+                "/know-your-business-services-kyb*",
+                "/anti-money-laundering-aml*",
+                "/api-reference/*",
+                "/sdk*"
+            ]
         },
-        #{
-            #"url": "https://youverify.co",
-            #"category": "commercial_business",
-            #"limit": 15,
-            #"paths": ["/en/resources/faqs*", "/en/company/about-us*", "/en/resources/regional-compliance*", "/en/blogs*", "/en/resources/country-coverage*", "/en/solution/customer-onboarding*", "/en/company/press-and-media"]
-        #}
+        {
+            "url": "https://youverify.co",
+            "category": "commercial_business",
+            "limit": 40,
+            "paths": [
+                "/en/pricing*",
+                "/en/industry/*",
+                "/en/solution/*",
+                "/en/company/*",
+                "/en/resources/faqs*"
+            ]
+        }
     ]
 
     for target in targets:

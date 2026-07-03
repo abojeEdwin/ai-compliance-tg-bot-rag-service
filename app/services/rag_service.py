@@ -31,10 +31,8 @@ async def ingest_document_service(payload):
 async def rag_query_service(prompt: str):
     db_pool = get_db()
     
-    # 1. Embed incoming Telegram prompt
     query_vector = get_query_embedding(prompt)
     
-    # 2. Query nearest child vectors using cosine distance (<=>) but select parent texts
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT p.text FROM child_vectors c
@@ -48,6 +46,5 @@ async def rag_query_service(prompt: str):
         
     context_blocks = [row['text'] for row in rows]
     
-    # 3. Generate answer through Cohere
     answer = generate_answer(prompt, context_blocks)
     return {"answer": answer}

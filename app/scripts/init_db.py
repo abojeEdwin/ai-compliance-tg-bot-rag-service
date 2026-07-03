@@ -28,7 +28,7 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        print("✅ Database schema initialized successfully with pgvector.")
+        print("Database schema initialized successfully with pgvector.")
     finally:
         await conn.close()
 
