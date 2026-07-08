@@ -57,7 +57,9 @@ async def ingest_document_service(payload):
     }
 
 
-async def rag_query_service(prompt: str):
+async def rag_query_service(prompt: str, history: list = None):
+    if history is None:
+        history = []
     db_pool = get_db()
 
     logger.debug("Generating query embedding for prompt: %r", prompt[:80])
@@ -81,7 +83,7 @@ async def rag_query_service(prompt: str):
     context_blocks = [row["text"] for row in rows]
 
     logger.debug("Calling LLM to generate grounded answer...")
-    answer = generate_answer(prompt, context_blocks)
+    answer = generate_answer(prompt, context_blocks, history)
     logger.info("LLM answer generated successfully.")
 
     return {"answer": answer}

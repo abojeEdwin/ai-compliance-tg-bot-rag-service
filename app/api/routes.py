@@ -60,7 +60,7 @@ async def rag_endpoint(payload: QueryRequest, request: Request):
     logger.info("POST /api/rag/ask — prompt=%r", payload.prompt[:120])
 
     try:
-        result = await rag_query_service(payload.prompt)
+        result = await rag_query_service(payload.prompt, payload.history)
         logger.info("RAG query completed successfully.")
         return result
     except Exception as exc:

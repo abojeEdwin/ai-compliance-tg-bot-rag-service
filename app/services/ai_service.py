@@ -54,12 +54,16 @@ def get_query_embedding(text: str) -> list[float]:
         raise
 
 
-def generate_answer(question: str, context_chunks: list[str]) -> str:
+def generate_answer(question: str, context_chunks: list[str], history: list = None) -> str:
     """Passes context blocks to Command-R for a bounded, grounded answer."""
+    if history is None:
+        history = []
+
     logger.debug(
-        "Calling Cohere chat — question=%r, context_blocks=%d",
+        "Calling Cohere chat — question=%r, context_blocks=%d, history_length=%d",
         question[:80],
         len(context_chunks),
+        len(history),
     )
     joined_context = "\n---\n".join(context_chunks)
 
@@ -81,13 +85,21 @@ def generate_answer(question: str, context_chunks: list[str]) -> str:
         f"VERIFIED CONTEXT:\n{joined_context}"
     )
 
+    messages = [{"role": "system", "content": prompt}]
+    
+    # Map Node.js 'chatbot' role to Cohere's native 'assistant' role
+    for msg in history:
+        role = msg.get("role", "user")
+        if role == "chatbot":
+            role = "assistant"
+        messages.append({"role": role, "content": msg.get("content", "")})
+        
+    messages.append({"role": "user", "content": question})
+
     try:
         response = co.chat(
             model="command-r7b-12-2024",
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": question},
-            ],
+            messages=messages,
             temperature=0.0,
         )
         answer = response.message.content[0].text
